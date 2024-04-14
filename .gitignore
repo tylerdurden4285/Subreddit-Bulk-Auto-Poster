@@ -1,7 +1,18 @@
 .venv
 venv/
+venv
 .env
 env/
+env
 
 test/
 test.py
+
+.idea
+__pycache__/
+
+*.log
+
+TODO.md
+.todo
+TODO
