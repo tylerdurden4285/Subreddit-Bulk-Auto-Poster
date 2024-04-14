@@ -11,19 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 # function to send a post to the fastapi endpoint
-def send_post(title, body, flair_id, subreddit):
+def send_post(title, body, flair_id, subreddit, post_type, url):
 
-    url = f"http://localhost:8000/post/{subreddit}"
-    payload = {"title": title, "body": body, "flair_id": flair_id}
+    response_url = f"http://localhost:8000/post/{subreddit}"
+    payload = {"title": title, "body": body, "flair_id": flair_id, "post_type": post_type, "url": url}
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {BEARER_TOKEN}"}
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(response_url, json=payload, headers=headers)
         response.raise_for_status()  # Raises a HTTPError for 4xx, 5xx errors
         return response.json()
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"Request to {url} failed: {e}")
+        logger.error(f"Request to {response_url} failed: {e}")
         return None
 
     except Exception as e:

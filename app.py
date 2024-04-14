@@ -40,15 +40,30 @@ if uploaded_file:
         st.table(df)
 
         title = st.text_input("Title")
-        body = st.text_area("Body")
+
+        # Radio button to choose between text post or link post
+        post_type = st.radio("Post Type", ["Text", "Link"])
+
+        # Conditional input fields based on post type selection
+        if post_type == "Text":
+            body = st.text_area("Body")
+            url = None  # No URL for text posts
+        else:
+            url = st.text_input("URL")
+            body = None  # No body for link posts
 
         if st.button("Schedule Post"):
             success_count = 0  # Initialize success counter
             for index, row in df.iterrows():
-                response = send_post(title, body, row['Flair ID'], row['Subreddit'])
+                # Adjusting send_post parameters based on post type
+                if post_type == "Text":
+                    response = send_post(title, body, row['Flair ID'], row['Subreddit'], "selftext", None)
+                else:
+                    response = send_post(title, None, row['Flair ID'], row['Subreddit'], "link", url)
+
                 if response:
                     st.success(f"Post scheduled successfully on {row['Subreddit']}")
-                    success_count += 1  # Increment the success counter
+                    success_count += 1
                 else:
                     st.error(f"Failed to schedule post on {row['Subreddit']}")
 

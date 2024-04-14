@@ -101,7 +101,8 @@ def get_subreddit_flairs(subreddit_name: str):
 # Post to a specific subreddit with a title, body and optional flair_id
 class PostRequest(BaseModel):
     title: str
-    body: str
+    body: Optional[str] = None
+    url: Optional[str] = None
     flair_id: Optional[str] = None
 
 
@@ -111,31 +112,44 @@ def post_to_subreddit(subreddit_name: str, post_request: PostRequest,
                       credentials: HTTPAuthorizationCredentials = Depends(token_required)):
     try:
         subreddit = reddit.subreddit(subreddit_name)
-        submission = subreddit.submit(post_request.title, selftext=post_request.body, flair_id=post_request.flair_id)
+        # Validation for post type
+        if post_request.body and post_request.url:
+            raise HTTPException(status_code=400, detail="Submit either a text post or a link post, not both.")
+        elif post_request.url:
+            submission = subreddit.submit(title=post_request.title, url=post_request.url,
+                                          flair_id=post_request.flair_id)
+        elif post_request.body:
+            submission = subreddit.submit(title=post_request.title, selftext=post_request.body,
+                                          flair_id=post_request.flair_id)
+        else:
+            raise HTTPException(status_code=400, detail="A body or URL must be provided for the post.")
+
+        # Get the full post URL
+        full_post_url = f"https://www.reddit.com{submission.permalink}"
         return {"message": "Post submitted successfully",
                 "post_id": submission.id,
-                "post_url": submission.url}
+                "post_url": full_post_url}
+
     except Exception as e:
         logging.error("Error posting to subreddit: {}".format(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error posting to subreddit")
-
+        raise HTTPException(status_code=400, detail=f"Error posting to subreddit: {e}")
 
 # Post comment to a specific post
-class CommentRequest(BaseModel):
-    comment: str
+# class CommentRequest(BaseModel):
+#     comment: str
 
 
 # Takes a variable input called "comment" and posts it to the specific existing reddit post by it's post_id
-@app.post("/post/comment/{post_id}")
-def post_comment_to_post(post_id: str, comment_request: CommentRequest,
-                         credentials: HTTPAuthorizationCredentials = Depends(token_required)):
-    try:
-        submission = reddit.submission(id=post_id)
-        submission.reply(comment_request.comment)
-        return {"message": "Comment submitted successfully",
-                "post_id": post_id,
-                "post_url": submission.url}  # Add this line
-    except Exception as e:
-        logging.error("Error posting comment to post: {}".format(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error posting comment to post")
-# Run with uvicorn hint: uvicorn app:app --reload
+# @app.post("/post/comment/{post_id}")
+# def post_comment_to_post(post_id: str, comment_request: CommentRequest,
+#                          credentials: HTTPAuthorizationCredentials = Depends(token_required)):
+#     try:
+#         submission = reddit.submission(id=post_id)
+#         submission.reply(comment_request.comment)
+#         return {"message": "Comment submitted successfully",
+#                 "post_id": post_id,
+#                 "post_url": submission.url}  # Add this line
+#     except Exception as e:
+#         logging.error("Error posting comment to post: {}".format(e))
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error posting comment to post")
+# # Run with uvicorn hint: uvicorn app:app --reload
