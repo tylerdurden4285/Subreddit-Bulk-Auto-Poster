@@ -6,7 +6,7 @@ BEARER_TOKEN = os.getenv('BEARER_TOKEN')
 
 
 # log to app.log file in the same directory
-logging.basicConfig(filename='api.log', level=logging.INFO)
+logging.basicConfig(filename='app.log', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

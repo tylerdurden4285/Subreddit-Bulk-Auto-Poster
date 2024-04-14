@@ -1,34 +1,26 @@
 import streamlit as st
 import pandas as pd
 from connector import send_post, check_flairs
+from logger import setup_custom_logger
 
-# log to app.log file in the same directory
-import logging
+# Setup logger
+logger = setup_custom_logger(__name__)
+logger.propagate = False
 
-logging.basicConfig(filename='app.log', level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+# Streamlit UI setup
 st.title("Reddit Post Scheduler")
-
-st.write("This app allows you to schedule posts on multiple subreddits at once. "
-         "You can select the flair for each subreddit and schedule the post."
-         "\n\n**IMPORTANT**: Your text file must be formatted like this example or it wont work:")
-
-# show text file example
-
-st.expander("Example", expanded=False).code("""
-r/learnpython
-r/programming
-r/python
+st.write("""
+This app allows you to schedule posts on multiple subreddits at once. 
+You can select the flair for each subreddit and schedule the post.
+**IMPORTANT**: Your text file must be formatted like this example or it won't work:
 """)
 
-st.divider()
+st.expander("Example", expanded=False).code("r/learnpython\nr/programming\nr/python")
+
 uploaded_file = st.file_uploader("Choose your subreddit text file", type="txt", accept_multiple_files=False)
-if uploaded_file is not None:
-    st.divider()
+if uploaded_file:
     content = uploaded_file.getvalue().decode("utf-8")
     lines = content.split("\n")
-    # Remove 'r/' prefix right when extracting subreddit names
     subreddits = [line.strip().removeprefix('r/') for line in lines if line.strip() and line.startswith('r/')]
 
     if subreddits:
@@ -36,55 +28,29 @@ if uploaded_file is not None:
         for subreddit in subreddits:
             flairs = check_flairs(subreddit)
             if flairs and flairs['flairs']:
-                st.subheader("Flair Selection")
-                st.write(
-                    "If the subreddit has flair choice requirements you'll be able to make your selection in the "
-                    "dropbox below. If not, then flair is not needed to post there and no action is needed from "
-                    "you.\n\n")
-
                 flair_options = {flair['flair_text']: flair['flair_id'] for flair in flairs['flairs']}
-                select_key = f"Select flair for {subreddit}"
-                selected_flair = st.selectbox(f"Select flair for {subreddit}:", list(flair_options.keys()),
-                                              key=select_key)
-                data.append([subreddit, f"{selected_flair}"])
+                selected_flair_text = st.selectbox(f"Select flair for {subreddit}:", list(flair_options.keys()))
+                selected_flair_id = flair_options[selected_flair_text]
+                data.append([subreddit, selected_flair_text, selected_flair_id])
             else:
-                data.append([subreddit, "None"])
+                # Append None or a similar indicator that no flair is available/required
+                data.append([subreddit, "No Flair", None])
 
-        df = pd.DataFrame(data, columns=['Subreddit', 'Flair'])
-        df.index = df.index + 1
-        st.subheader("Subreddits")
-        st.write("The following subreddits and their flairs have been loaded:")
+        df = pd.DataFrame(data, columns=['Subreddit', 'Flair Name', 'Flair ID'])
         st.table(df)
 
-        st.divider()
-        st.subheader("Post Details")
         title = st.text_input("Title")
         body = st.text_area("Body")
 
-        if st.button("Submit"):
-            success_count = 0
-            errors = []
-            for i, row in df.iterrows():
-                # Check if flair information is present and split properly
-                if ':' in row['Flair']:
-                    flair_id = row['Flair'].split(': ')[-1]
+        if st.button("Schedule Post"):
+            for index, row in df.iterrows():
+                # Send posts regardless of flair availability
+                response = send_post(title, body, row['Flair ID'], row['Subreddit'])
+                if response:
+                    st.success(f"Post scheduled successfully on {row['Subreddit']}")
                 else:
-                    flair_id = None  # No flair needed or available
-
-                # Try to send the post
-                result = send_post(title, body, flair_id, row['Subreddit'])
-                if result:
-                    if 'post_url' in result:
-                        post_url = result.get('post_url', '#')
-                        st.markdown(f"**Post sent for subreddit:** [{row['Subreddit']}]({post_url})")
-                        success_count += 1
-                    else:
-                        errors.append(
-                            f"Failed to send post for {row['Subreddit']}: {result.get('message', 'Unknown error')}")
-                else:
-                    errors.append(f"Failed to send post: No response received for {row['Subreddit']}.")
-
-            if errors:
-                for error in errors:
-                    st.error(error)
-            st.success(f"Job finished. Total successful posts: {success_count}.")
+                    st.error(f"Failed to schedule post on {row['Subreddit']}")
+    else:
+        st.error("No subreddits found in the file. Please make sure the file is formatted correctly.")
+else:
+    st.info("Please upload a text file to start scheduling posts.")
