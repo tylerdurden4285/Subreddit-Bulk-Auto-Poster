@@ -134,22 +134,24 @@ def post_to_subreddit(subreddit_name: str, post_request: PostRequest,
         logging.error("Error posting to subreddit: {}".format(e))
         raise HTTPException(status_code=400, detail=f"Error posting to subreddit: {e}")
 
+
 # Post comment to a specific post
-# class CommentRequest(BaseModel):
-#     comment: str
+class CommentRequest(BaseModel):
+    comment: str
 
 
 # Takes a variable input called "comment" and posts it to the specific existing reddit post by it's post_id
-# @app.post("/post/comment/{post_id}")
-# def post_comment_to_post(post_id: str, comment_request: CommentRequest,
-#                          credentials: HTTPAuthorizationCredentials = Depends(token_required)):
-#     try:
-#         submission = reddit.submission(id=post_id)
-#         submission.reply(comment_request.comment)
-#         return {"message": "Comment submitted successfully",
-#                 "post_id": post_id,
-#                 "post_url": submission.url}  # Add this line
-#     except Exception as e:
-#         logging.error("Error posting comment to post: {}".format(e))
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error posting comment to post")
-# # Run with uvicorn hint: uvicorn app:app --reload
+@app.post("/post/comment/{post_id}")
+def post_comment_to_post(post_id: str, comment_request: CommentRequest,
+                         credentials: HTTPAuthorizationCredentials = Depends(token_required)):
+    try:
+        submission = reddit.submission(id=post_id)
+        submission.reply(comment_request.comment)
+        return {"message": "Comment submitted successfully",
+                "post_id": post_id,
+                "post_url": submission.url}  # Add this line
+    except Exception as e:
+        logging.error("Error posting comment to post: {}".format(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error posting comment to post")
+
+# Run with uvicorn hint: uvicorn app:app --reload

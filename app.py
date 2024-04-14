@@ -1,17 +1,18 @@
 import streamlit as st
 import pandas as pd
-from connector import send_post, check_flairs
+from connector import send_post, check_flairs, send_comment
 from logger import setup_custom_logger
+from time import sleep
 
 # Setup logger
 logger = setup_custom_logger(__name__)
 logger.propagate = False
 
 # Streamlit UI setup
-st.title("Reddit Post Scheduler")
+st.title("Reddit Bulk Poster
 st.write("""
-This app allows you to schedule posts on multiple subreddits at once. 
-You can select the flair for each subreddit and schedule the post.
+This app allows you to posts on multiple subreddits at once. 
+You can select the flair for each subreddit.
 **IMPORTANT**: Your text file must be formatted like this example or it won't work:
 """)
 
@@ -52,20 +53,34 @@ if uploaded_file:
             url = st.text_input("URL")
             body = None  # No body for link posts
 
-        if st.button("Schedule Post"):
+        comment = st.text_area("Comment")
+
+        if st.button("Submit Post"):
             success_count = 0  # Initialize success counter
             for index, row in df.iterrows():
                 # Adjusting send_post parameters based on post type
                 if post_type == "Text":
                     response = send_post(title, body, row['Flair ID'], row['Subreddit'], "selftext", None)
+
                 else:
                     response = send_post(title, None, row['Flair ID'], row['Subreddit'], "link", url)
 
                 if response:
-                    st.success(f"Post scheduled successfully on {row['Subreddit']}")
+                    st.success(f"Posted successfully on {row['Subreddit']}")
                     success_count += 1
+
+                    # Check if comment is provided and post_id is available
+                    sleep(2)
+                    if comment and response.get('post_id'):
+                        # Send comment
+                        comment_response = send_comment(response['post_id'], comment)
+                        if comment_response:
+                            st.success(f"Comment posted on {row['Subreddit']}")
+                        else:
+                            st.error(f"Failed to post comment on {row['Subreddit']}")
+
                 else:
-                    st.error(f"Failed to schedule post on {row['Subreddit']}")
+                    st.error(f"Failed to post on {row['Subreddit']}")
 
             st.info(f"Finished. Posted to {success_count} subreddits.")
             st.balloons()
