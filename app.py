@@ -43,13 +43,17 @@ if uploaded_file:
         body = st.text_area("Body")
 
         if st.button("Schedule Post"):
+            success_count = 0  # Initialize success counter
             for index, row in df.iterrows():
-                # Send posts regardless of flair availability
                 response = send_post(title, body, row['Flair ID'], row['Subreddit'])
                 if response:
                     st.success(f"Post scheduled successfully on {row['Subreddit']}")
+                    success_count += 1  # Increment the success counter
                 else:
                     st.error(f"Failed to schedule post on {row['Subreddit']}")
+
+            st.info(f"Finished. Posted to {success_count} subreddits.")
+            st.balloons()
     else:
         st.error("No subreddits found in the file. Please make sure the file is formatted correctly.")
 else:
