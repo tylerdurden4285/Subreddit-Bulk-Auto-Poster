@@ -9,7 +9,7 @@ logger = setup_custom_logger(__name__)
 logger.propagate = False
 
 # Streamlit UI setup
-st.title("Reddit Bulk Poster
+st.title("Reddit Bulk Poster")
 st.write("""
 This app allows you to posts on multiple subreddits at once. 
 You can select the flair for each subreddit.
