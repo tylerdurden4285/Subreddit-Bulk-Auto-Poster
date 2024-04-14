@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
-from api import send_post, check_flairs
+from connector import send_post, check_flairs
 
 # log to app.log file in the same directory
 import logging
+
 logging.basicConfig(filename='app.log', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
 
 st.title("Reddit Post Scheduler")
 
@@ -22,7 +21,6 @@ r/learnpython
 r/programming
 r/python
 """)
-
 
 st.divider()
 uploaded_file = st.file_uploader("Choose your subreddit text file", type="txt", accept_multiple_files=False)
@@ -40,11 +38,14 @@ if uploaded_file is not None:
             if flairs and flairs['flairs']:
                 st.subheader("Flair Selection")
                 st.write(
-                    "If the subreddit has flair choice requirements you'll be able to make your selection in the dropbox below. If not, then flair is not needed to post there and no action is needed from you.\n\n")
+                    "If the subreddit has flair choice requirements you'll be able to make your selection in the "
+                    "dropbox below. If not, then flair is not needed to post there and no action is needed from "
+                    "you.\n\n")
 
                 flair_options = {flair['flair_text']: flair['flair_id'] for flair in flairs['flairs']}
                 select_key = f"Select flair for {subreddit}"
-                selected_flair = st.selectbox(f"Select flair for {subreddit}:", list(flair_options.keys()), key=select_key)
+                selected_flair = st.selectbox(f"Select flair for {subreddit}:", list(flair_options.keys()),
+                                              key=select_key)
                 data.append([subreddit, f"{selected_flair}"])
             else:
                 data.append([subreddit, "None"])
@@ -78,7 +79,8 @@ if uploaded_file is not None:
                         st.markdown(f"**Post sent for subreddit:** [{row['Subreddit']}]({post_url})")
                         success_count += 1
                     else:
-                        errors.append(f"Failed to send post for {row['Subreddit']}: {result.get('message', 'Unknown error')}")
+                        errors.append(
+                            f"Failed to send post for {row['Subreddit']}: {result.get('message', 'Unknown error')}")
                 else:
                     errors.append(f"Failed to send post: No response received for {row['Subreddit']}.")
 
@@ -86,4 +88,3 @@ if uploaded_file is not None:
                 for error in errors:
                     st.error(error)
             st.success(f"Job finished. Total successful posts: {success_count}.")
-
