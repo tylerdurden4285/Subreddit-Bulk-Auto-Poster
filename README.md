@@ -14,6 +14,12 @@ Create a '.txt' file with the subreddits you want to post to use. If it needs fl
 Select if you want a text or link category post.
 Add your data you want to post to the fields provided and submit it. 
 
+TXT FILE TIPS: 
+
+- text file format should include the 'r/' so 'r/examplesub' is correct but 'examplesub' is not.
+- One per line.
+- Try not to have any blank empty space before, inbetween or after your text. 
+
 **PLEASE NOTE**: 
  
 * This is a work in progress. 
