@@ -24,6 +24,7 @@ TXT FILE TIPS:
  
 * This is a work in progress. 
 * Subreddits have their own moderation rules so you WILL run into problems, learn the issue and send it to me and I'll do my best to find a workaround. 
+* Swagger UI can be found at http://localhost:8000/docs for api testing (don't forget to auth by using your BEARER_TOKEN from .env first). 
 
 **COMING SOON**: 
 
